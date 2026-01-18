@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dr. Asba Ali Memon - Interactive Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 300px; 
+            max-height: 400px; 
+        } 
+        @media (min-width: 768px) { 
+            .chart-container { height: 350px; } 
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .timeline-line {
+            position: absolute;
+            left: 24px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #e2e8f0;
+            z-index: 0;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .nav-item.active {
+            color: #1e40af;
+            border-bottom: 2px solid #1e40af;
+            font-weight: 600;
+        }
+    </style>
+    <!-- Chosen Palette: Clinical Blue & Slate (Trust, Professionalism, Hygiene) -->
+    <!-- Application Structure Plan: Dashboard-style Layout. 
+         1. Header: Persistent identity & contact.
+         2. Navigation: Tab-based switching for "Dashboard", "Clinical Timeline", "Credentials", "Academics", "Impact".
+         3. Dashboard: High-level metrics & Chart.js visualization of portfolio composition.
+         4. Timeline: Chronological vertical list of experience.
+         5. Academics: Filterable list of research/teaching.
+         Rationale: Allows quick scanning of credentials for recruiters while enabling deeper dives into specific experiences. -->
+    <!-- Visualization & Content Choices:
+         1. Portfolio Breakdown Chart (Doughnut): Report Data -> Goal: Summarize professional focus -> Viz: Doughnut Chart -> Interaction: Hover for counts -> Justification: Shows balance between clinical, research, and service.
+         2. Interactive Timeline: Report Clinical History -> Goal: Change/Time -> Method: HTML/CSS Vertical Timeline -> Interaction: None (Scroll).
+         3. Filterable Academic List: Report Research/Teaching -> Goal: Organize -> Method: JS Array Filter -> Interaction: Click tabs to filter categories.
+         4. Metric Cards: Key Resume Stats -> Goal: Inform -> Method: HTML Grid. 
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="text-slate-700 h-screen flex flex-col overflow-hidden">
+
+    <!-- Top Navigation / Header -->
+    <header class="bg-white border-b border-slate-200 shadow-sm flex-none z-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-lg">AM</div>
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900 leading-tight">Asba Ali Memon, MD</h1>
+                        <p class="text-xs text-slate-500 font-medium tracking-wide uppercase">Resident Physician</p>
+                    </div>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <button onclick="navTo('dashboard')" id="nav-dashboard" class="nav-item active px-1 pt-1 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors">Overview</button>
+                    <button onclick="navTo('timeline')" id="nav-timeline" class="nav-item px-1 pt-1 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors">Clinical Timeline</button>
+                    <button onclick="navTo('credentials')" id="nav-credentials" class="nav-item px-1 pt-1 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors">Credentials</button>
+                    <button onclick="navTo('academics')" id="nav-academics" class="nav-item px-1 pt-1 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors">Academics</button>
+                    <button onclick="navTo('service')" id="nav-service" class="nav-item px-1 pt-1 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors">Impact</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="mailto:asbamemon@yahoo.com" class="p-2 text-slate-400 hover:text-blue-600 transition-colors" title="Email">
+                        &#9993;
+                    </a>
+                    <a href="https://linkedin.com/in/asba-md" target="_blank" class="p-2 text-slate-400 hover:text-blue-700 transition-colors" title="LinkedIn">
+                        in
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Nav Scroll -->
+        <div class="md:hidden overflow-x-auto hide-scrollbar border-t border-slate-100 bg-slate-50">
+            <div class="flex space-x-6 px-4 py-3 min-w-max">
+                <button onclick="navTo('dashboard')" id="mob-dashboard" class="text-sm font-medium text-blue-700">Overview</button>
+                <button onclick="navTo('timeline')" id="mob-timeline" class="text-sm font-medium text-slate-600">Timeline</button>
+                <button onclick="navTo('credentials')" id="mob-credentials" class="text-sm font-medium text-slate-600">Credentials</button>
+                <button onclick="navTo('academics')" id="mob-academics" class="text-sm font-medium text-slate-600">Academics</button>
+                <button onclick="navTo('service')" id="mob-service" class="text-sm font-medium text-slate-600">Service</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-8" id="main-container">
+        
+        <!-- VIEW: DASHBOARD -->
+        <div id="view-dashboard" class="max-w-7xl mx-auto space-y-6 fade-in">
+            <!-- Intro Block -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Professional Summary</h2>
+                <p class="text-slate-600 leading-relaxed">
+                    Resident Physician in <strong>Combined Internal Medicine & Pediatrics</strong> at the University of Missouri. 
+                    Dedicated to managing diverse caseloads in high-volume settings, gaining expertise in chronic conditions, critical care, and preventive medicine. 
+                    Proven track record in medical education, research, and community advocacy.
+                </p>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100">Internal Medicine</span>
+                    <span class="px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-semibold border border-teal-100">Pediatrics</span>
+                    <span class="px-3 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-semibold border border-purple-100">Research</span>
+                    <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-semibold border border-orange-100">Medical Education</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Metrics -->
+                <div class="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center card-hover transition-all duration-300">
+                        <div class="text-3xl font-bold text-blue-600 mb-1" id="stat-years">4+</div>
+                        <div class="text-xs text-slate-500 uppercase font-semibold">Years Clinical Exp</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center card-hover transition-all duration-300">
+                        <div class="text-3xl font-bold text-teal-600 mb-1" id="stat-certs">5</div>
+                        <div class="text-xs text-slate-500 uppercase font-semibold">Certifications</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center card-hover transition-all duration-300">
+                        <div class="text-3xl font-bold text-purple-600 mb-1" id="stat-pres">5</div>
+                        <div class="text-xs text-slate-500 uppercase font-semibold">Presentations</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center card-hover transition-all duration-300">
+                        <div class="text-3xl font-bold text-orange-600 mb-1" id="stat-service">5</div>
+                        <div class="text-xs text-slate-500 uppercase font-semibold">Service Projects</div>
+                    </div>
+
+                    <!-- Contact/Location Card -->
+                    <div class="col-span-2 md:col-span-4 bg-white p-5 rounded-xl shadow-sm border border-slate-200 mt-2">
+                        <h3 class="font-semibold text-slate-800 mb-3 border-b border-slate-100 pb-2">Contact & Location</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div class="flex items-center gap-2 text-slate-600">
+                                <span class="text-slate-400">&#128205;</span> Columbia, MO, USA
+                            </div>
+                            <div class="flex items-center gap-2 text-slate-600">
+                                <span class="text-slate-400">&#9742;</span> (573) 356-4199
+                            </div>
+                            <div class="flex items-center gap-2 text-slate-600">
+                                <span class="text-slate-400">&#9993;</span> asbamemon@yahoo.com
+                            </div>
+                            <div class="flex items-center gap-2 text-slate-600">
+                                <span class="text-slate-400">&#127760;</span> Native Sindhi, Fluent English/Urdu
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visualization -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                    <h3 class="font-semibold text-slate-800 mb-4 text-sm uppercase tracking-wide">Portfolio Composition</h3>
+                    <div class="flex-grow flex items-center justify-center">
+                        <div class="chart-container">
+                            <canvas id="portfolioChart"></canvas>
+                        </div>
+                    </div>
+                    <p class="text-xs text-center text-slate-400 mt-2">Distribution of documented professional activities</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: TIMELINE -->
+        <div id="view-timeline" class="hidden max-w-4xl mx-auto">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 mb-6">
+                <h2 class="text-xl font-bold text-slate-800">Clinical Timeline & Education</h2>
+                <p class="text-slate-500 text-sm mt-1">A chronological view of training, residencies, and medical education.</p>
+            </div>
+            
+            <div class="relative py-4" id="timeline-container">
+                <div class="timeline-line"></div>
+                <!-- JS will populate timeline items here -->
+            </div>
+        </div>
+
+        <!-- VIEW: CREDENTIALS -->
+        <div id="view-credentials" class="hidden max-w-5xl mx-auto space-y-6">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                <h2 class="text-xl font-bold text-slate-800 mb-2">Licensure & Board Certification</h2>
+                <p class="text-slate-500 text-sm mb-6">Current licensing status and board eligibility for US practice.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- License -->
+                    <div class="bg-blue-50 rounded-lg p-5 border border-blue-100">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-blue-900">Missouri Medical Board</h3>
+                                <p class="text-blue-700 text-sm mt-1">MD Training License</p>
+                            </div>
+                            <span class="bg-white text-blue-600 text-xs font-mono py-1 px-2 rounded border border-blue-200">No: 2023019631</span>
+                        </div>
+                    </div>
+                    <!-- ECFMG -->
+                    <div class="bg-emerald-50 rounded-lg p-5 border border-emerald-100">
+                         <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-emerald-900">ECFMG Certified</h3>
+                                <p class="text-emerald-700 text-sm mt-1">USMLE Step 1, 2, and 3</p>
+                            </div>
+                            <span class="bg-white text-emerald-600 text-xs font-bold py-1 px-2 rounded border border-emerald-200">PASS</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wide mb-4">Board Eligibility (Expected June 2027)</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center p-3 bg-slate-50 rounded border border-slate-200">
+                            <div class="h-2 w-2 rounded-full bg-slate-400 mr-3"></div>
+                            <span class="font-medium text-slate-700">American Board of Internal Medicine</span>
+                        </div>
+                        <div class="flex items-center p-3 bg-slate-50 rounded border border-slate-200">
+                            <div class="h-2 w-2 rounded-full bg-slate-400 mr-3"></div>
+                            <span class="font-medium text-slate-700">American Board of Pediatrics</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                <h2 class="text-xl font-bold text-slate-800 mb-4">Life Support Certifications</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center p-4 rounded-lg bg-slate-50 border border-slate-100">
+                        <div class="font-bold text-slate-800 text-lg">ACLS</div>
+                        <div class="text-xs text-slate-500 mt-1">Valid until July 2027</div>
+                    </div>
+                    <div class="text-center p-4 rounded-lg bg-slate-50 border border-slate-100">
+                        <div class="font-bold text-slate-800 text-lg">PALS</div>
+                        <div class="text-xs text-slate-500 mt-1">Valid until July 2027</div>
+                    </div>
+                    <div class="text-center p-4 rounded-lg bg-slate-50 border border-slate-100">
+                        <div class="font-bold text-slate-800 text-lg">NRP</div>
+                        <div class="text-xs text-slate-500 mt-1">Valid until July 2027</div>
+                    </div>
+                    <div class="text-center p-4 rounded-lg bg-slate-50 border border-slate-100">
+                        <div class="font-bold text-slate-800 text-lg">BLS</div>
+                        <div class="text-xs text-slate-500 mt-1">Valid until July 2027</div>
+                    </div>
+                </div>
+                <div class="mt-4 text-xs text-slate-400 text-center border-t border-slate-100 pt-3">
+                    Also certified in Covid-19 Contact Tracing (Johns Hopkins University, 2020)
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: ACADEMICS -->
+        <div id="view-academics" class="hidden max-w-5xl mx-auto">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 mb-6">
+                <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Academic Contributions</h2>
+                        <p class="text-slate-500 text-sm mt-1">Research, teaching roles, and conference presentations.</p>
+                    </div>
+                    <div class="flex bg-slate-100 p-1 rounded-lg self-start">
+                        <button onclick="filterAcademics('all')" class="filter-btn active px-4 py-1.5 text-sm rounded-md font-medium text-slate-600 transition-all hover:bg-white hover:shadow-sm" data-filter="all">All</button>
+                        <button onclick="filterAcademics('presentation')" class="filter-btn px-4 py-1.5 text-sm rounded-md font-medium text-slate-600 transition-all hover:bg-white hover:shadow-sm" data-filter="presentation">Presentations</button>
+                        <button onclick="filterAcademics('teaching')" class="filter-btn px-4 py-1.5 text-sm rounded-md font-medium text-slate-600 transition-all hover:bg-white hover:shadow-sm" data-filter="teaching">Teaching</button>
+                        <button onclick="filterAcademics('research')" class="filter-btn px-4 py-1.5 text-sm rounded-md font-medium text-slate-600 transition-all hover:bg-white hover:shadow-sm" data-filter="research">Research</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="academics-grid" class="grid grid-cols-1 gap-4">
+                <!-- JS Populates this -->
+            </div>
+        </div>
+
+        <!-- VIEW: SERVICE / IMPACT -->
+        <div id="view-service" class="hidden max-w-5xl mx-auto space-y-6">
+            <!-- Honors -->
+            <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl shadow-sm p-6 border border-yellow-100">
+                <h2 class="text-xl font-bold text-yellow-900 mb-4">&#127942; Honors & Awards</h2>
+                <div class="space-y-4">
+                    <div class="flex items-start gap-4">
+                        <div class="bg-white p-2 rounded-full shadow-sm text-xl">&#129351;</div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Best Graduate of the Year (Gold Medalist)</h3>
+                            <p class="text-slate-600 text-sm">Chandka Medical College, 2019</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                        <div class="bg-white p-2 rounded-full shadow-sm text-xl">&#127891;</div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">First Position (State of Sindh)</h3>
+                            <p class="text-slate-600 text-sm">MDCAT (Medical & Dental College Admission Test), 2013</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Community Service -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                <h2 class="text-xl font-bold text-slate-800 mb-6">Community Service & Leadership</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="service-grid">
+                    <!-- JS Populates this -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- DATA STORE ---
+        const resumeData = {
+            timeline: [
+                { type: 'work', role: 'Resident Physician', detail: 'Combined Internal Medicine & Pediatrics', org: 'University of Missouri', loc: 'Columbia, MO', date: 'July 2023 – Present', desc: 'Managing diverse caseload of adult and pediatric patients. Gaining expertise in chronic conditions, acute care, and preventive medicine. Supervising students.' },
+                { type: 'work', role: 'Clinical Observer', detail: 'Internal Medicine', org: 'South Shore University Hospital', loc: 'Bay Shore, NY', date: 'Sept 2022 – Oct 2022', desc: '' },
+                { type: 'work', role: 'Clinical Observer', detail: '', org: 'AdventHealth Hospital', loc: 'Orlando, FL', date: 'Aug 2022', desc: '' },
+                { type: 'work', role: 'Clinical Observer', detail: 'Outpatient Clinic', org: 'Dr. Rizwan Ullah Hameed’s Clinic', loc: 'Brooklyn, NY', date: 'July 2022', desc: '' },
+                { type: 'work', role: 'Resident', detail: 'Department of Medicine', org: 'Civil Hospital', loc: 'Karachi, Pakistan', date: 'Jan 2022 – June 2022', desc: '' },
+                { type: 'work', role: 'Lecturer', detail: 'Academic Role', org: 'Chandka Medical College', loc: 'Larkana, Pakistan', date: 'Dec 2020 – Dec 2021', desc: '' },
+                { type: 'work', role: 'Women Medical Officer', detail: 'Primary Care', org: 'PPHI', loc: 'Mad Bahu, Pakistan', date: 'Oct 2020 – Dec 2020', desc: '' },
+                { type: 'work', role: 'Intern', detail: 'Rotational Internship', org: 'Civil Hospital', loc: 'Larkana, Pakistan', date: 'Jan 2020 – June 2020', desc: '' },
+                { type: 'work', role: 'Intern', detail: 'Rotational Internship', org: 'Jinnah Postgraduate Medical Centre', loc: 'Karachi, Pakistan', date: 'April 2019 – Oct 2019', desc: '' },
+                { type: 'edu', role: 'MBBS', detail: 'Bachelor of Medicine, Bachelor of Surgery', org: 'Chandka Medical College', loc: 'Larkana, Pakistan', date: '2013 – 2019', desc: 'Honors: Gold Medalist (Best Graduate)' }
+            ],
+            academics: [
+                { type: 'research', title: 'Efficacy and Safety of Transarterial Chemoembolization (TACE) plus Sorafenib vs. TACE alone', desc: 'Systematic Review and Meta-analysis on treatment for non-resectable hepatocellular carcinoma.', year: 'Ongoing' },
+                { type: 'teaching', title: 'Advanced Physical Diagnosis Preceptor', desc: 'Preceptor for M3 medical students.', year: '2024–2025' },
+                { type: 'teaching', title: 'Intern Orientation Bootcamp Developer', desc: 'Curriculum development and instruction for incoming interns.', year: 'Ongoing' },
+                { type: 'teaching', title: 'Board Review Series Instructor', desc: 'Leading Nephrology review sessions for residents.', year: 'Ongoing' },
+                { type: 'teaching', title: 'Pathology Teaching Assistant', desc: 'Chandka Medical College Pathology Department.', year: '2022' },
+                { type: 'presentation', title: 'When Recurrent Infections Don’t Add Up: A Case of an 11-Month-Old Infant', desc: 'Problem Conference.', year: '2025' },
+                { type: 'presentation', title: 'Brentuximab Vedotin with Chemotherapy in Pediatric High-Risk Hodgkin’s Lymphoma', desc: 'Evidence-Based Medicine Presentation.', year: '2024' },
+                { type: 'presentation', title: 'Morning Report: Vastness of Differentials in Jaundice', desc: 'Workup and Management discussion.', year: '2024' },
+                { type: 'presentation', title: '16-Year-Old Female with Recurrent Hospitalization', desc: 'Case Presentation on Abdominal Pain/Vomiting.', year: '2023' },
+                { type: 'presentation', title: 'Primary Sclerosing Cholangitis', desc: 'GI Conference, Orlando, FL [Oral Presentation].', year: '2022' }
+            ],
+            service: [
+                { role: 'Co-Creator and Manager', project: 'Kids Matter More Than the Most', desc: 'Child abuse prevention project.' },
+                { role: 'Keynote Speaker/Organizer', project: 'Awareness Against Child Sexual Abuse', desc: 'Co-organized seminar with Psychologist Dr. Sobia Khateeb.' },
+                { role: 'Volunteer', project: 'School Health Drives', desc: 'Hepatitis B & C prevention drive and First Aid teaching at local schools.' },
+                { role: 'Volunteer', project: 'Patients Welfare Society', desc: 'General volunteering.' },
+                { role: 'Volunteer', project: 'Aga Khan Family Health Centre', desc: 'Islamabad, 2016.' }
+            ]
+        };
+
+        // --- CHART INITIALIZATION ---
+        function initCharts() {
+            const ctx = document.getElementById('portfolioChart').getContext('2d');
+            
+            // Calculate counts for data
+            const clinicalCount = resumeData.timeline.filter(i => i.type === 'work').length;
+            const eduCount = resumeData.timeline.filter(i => i.type === 'edu').length;
+            const researchCount = resumeData.academics.filter(i => i.type === 'research').length;
+            const teachingCount = resumeData.academics.filter(i => i.type === 'teaching').length;
+            const presCount = resumeData.academics.filter(i => i.type === 'presentation').length;
+            const serviceCount = resumeData.service.length;
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Clinical Experience', 'Teaching', 'Presentations', 'Service', 'Research'],
+                    datasets: [{
+                        data: [clinicalCount, teachingCount, presCount, serviceCount, researchCount],
+                        backgroundColor: [
+                            '#2563eb', // Blue (Clinical)
+                            '#f97316', // Orange (Teaching)
+                            '#9333ea', // Purple (Pres)
+                            '#10b981', // Emerald (Service)
+                            '#06b6d4'  // Cyan (Research)
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: { size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ${context.raw} Items`;
+                                }
+                            },
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            padding: 10
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        // --- RENDER FUNCTIONS ---
+        
+        function renderTimeline() {
+            const container = document.getElementById('timeline-container');
+            // Clear existing except line
+            container.innerHTML = '<div class="timeline-line"></div>';
+
+            resumeData.timeline.forEach((item, index) => {
+                const isEdu = item.type === 'edu';
+                const colorClass = isEdu ? 'bg-slate-100 text-slate-500 border-slate-300' : 'bg-blue-600 text-white border-blue-600';
+                const icon = isEdu ? '&#127891;' : '&#127973;';
+                
+                const html = `
+                    <div class="relative pl-16 py-2 pr-4 sm:pr-0 mb-6 group">
+                        <!-- Dot -->
+                        <div class="absolute left-[15px] top-3 h-5 w-5 rounded-full border-4 border-white ${isEdu ? 'bg-slate-300' : 'bg-blue-600'} shadow-sm z-10"></div>
+                        
+                        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative">
+                            <!-- Date Badge -->
+                            <div class="absolute -top-3 right-4 bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded border border-slate-200">
+                                ${item.date}
+                            </div>
+                            
+                            <h3 class="font-bold text-slate-800 text-lg">${item.role}</h3>
+                            <div class="text-sm text-blue-700 font-medium mb-1">${item.org} <span class="text-slate-400 font-normal">| ${item.loc}</span></div>
+                            ${item.detail ? `<div class="text-xs text-slate-500 uppercase tracking-wide font-semibold mb-2">${item.detail}</div>` : ''}
+                            ${item.desc ? `<p class="text-slate-600 text-sm mt-2 border-t border-slate-50 pt-2">${item.desc}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        function renderAcademics(filter = 'all') {
+            const container = document.getElementById('academics-grid');
+            container.innerHTML = '';
+            
+            const filtered = filter === 'all' 
+                ? resumeData.academics 
+                : resumeData.academics.filter(item => item.type === filter);
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="text-center text-slate-400 py-10">No items found in this category.</div>';
+                return;
+            }
+
+            filtered.forEach(item => {
+                let badgeColor = '';
+                let badgeText = '';
+                
+                switch(item.type) {
+                    case 'research': badgeColor = 'bg-cyan-100 text-cyan-800'; badgeText = 'Research'; break;
+                    case 'teaching': badgeColor = 'bg-orange-100 text-orange-800'; badgeText = 'Teaching'; break;
+                    case 'presentation': badgeColor = 'bg-purple-100 text-purple-800'; badgeText = 'Presentation'; break;
+                }
+
+                const html = `
+                    <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm hover:border-blue-300 transition-colors flex flex-col md:flex-row gap-4 justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="text-xs font-bold px-2 py-0.5 rounded ${badgeColor}">${badgeText}</span>
+                                <span class="text-xs text-slate-400 font-mono">${item.year}</span>
+                            </div>
+                            <h3 class="font-bold text-slate-800 text-md leading-snug">${item.title}</h3>
+                            <p class="text-slate-600 text-sm mt-2">${item.desc}</p>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        function renderService() {
+            const container = document.getElementById('service-grid');
+            container.innerHTML = '';
+            
+            resumeData.service.forEach(item => {
+                const html = `
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                        <h3 class="font-bold text-slate-800 text-sm mb-1">${item.role}</h3>
+                        <div class="text-blue-700 text-xs font-semibold uppercase mb-2">${item.project}</div>
+                        <p class="text-slate-600 text-xs leading-relaxed">${item.desc}</p>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        // --- NAVIGATION LOGIC ---
+        function navTo(viewId) {
+            // Hide all views
+            ['dashboard', 'timeline', 'credentials', 'academics', 'service'].forEach(id => {
+                document.getElementById(`view-${id}`).classList.add('hidden');
+                document.getElementById(`nav-${id}`)?.classList.remove('active', 'text-blue-700', 'border-blue-700');
+                document.getElementById(`nav-${id}`)?.classList.add('text-slate-500');
+                
+                // Mobile nav styling reset
+                document.getElementById(`mob-${id}`)?.classList.remove('text-blue-700');
+                document.getElementById(`mob-${id}`)?.classList.add('text-slate-600');
+            });
+
+            // Show selected view
+            const view = document.getElementById(`view-${viewId}`);
+            view.classList.remove('hidden');
+            
+            // Highlight Desktop Nav
+            const deskBtn = document.getElementById(`nav-${viewId}`);
+            if(deskBtn) {
+                deskBtn.classList.add('active', 'text-blue-700');
+                deskBtn.classList.remove('text-slate-500');
+            }
+
+            // Highlight Mobile Nav
+            const mobBtn = document.getElementById(`mob-${viewId}`);
+            if(mobBtn) {
+                mobBtn.classList.remove('text-slate-600');
+                mobBtn.classList.add('text-blue-700');
+            }
+        }
+
+        function filterAcademics(type) {
+            renderAcademics(type);
+            // Update button styles
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if(btn.dataset.filter === type) {
+                    btn.classList.add('bg-white', 'text-blue-700', 'shadow-sm', 'ring-1', 'ring-slate-200');
+                    btn.classList.remove('text-slate-600');
+                } else {
+                    btn.classList.remove('bg-white', 'text-blue-700', 'shadow-sm', 'ring-1', 'ring-slate-200');
+                    btn.classList.add('text-slate-600');
+                }
+            });
+        }
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            renderTimeline();
+            renderAcademics();
+            renderService();
+            
+            // Set Dashboard as default
+            navTo('dashboard');
+        });
+
+    </script>
+</body>
+</html>
